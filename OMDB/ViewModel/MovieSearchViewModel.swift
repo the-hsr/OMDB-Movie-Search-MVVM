@@ -14,31 +14,23 @@ class MovieSearchViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    private let movieService: MovieServiceProtocol
     private var cancellables = Set<AnyCancellable>()
-    private let apiKey = "99b6efb0"
+
+    init(movieService: MovieServiceProtocol = MovieService()) {
+        self.movieService = movieService
+    }
 
     func searchMovies() {
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else {
-            errorMessage = CommonStrings.enterMovieName
+            errorMessage = "Please enter a movie name."
             return
         }
 
         isLoading = true
         errorMessage = nil
 
-        let queryEncoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let urlString = "https://www.omdbapi.com/?apikey=\(apiKey)&s=\(queryEncoded)"
-
-        guard let url = URL(string: urlString) else {
-            errorMessage = CommonStrings.invalideURL
-            isLoading = false
-            return
-        }
-
-        URLSession.shared.dataTaskPublisher(for: url)
-            .map(\.data)
-            .decode(type: MovieSearchResponse.self, decoder: JSONDecoder())
-            .receive(on: DispatchQueue.main)
+        movieService.searchMovies(query: query)
             .sink(receiveCompletion: { [weak self] completion in
                 self?.isLoading = false
                 if case .failure(let error) = completion {
@@ -50,7 +42,7 @@ class MovieSearchViewModel: ObservableObject {
                     self?.movies = results
                 } else {
                     self?.movies = []
-                    self?.errorMessage = response.error ?? CommonStrings.noResultsFound
+                    self?.errorMessage = response.error ?? "No results found."
                 }
             })
             .store(in: &cancellables)

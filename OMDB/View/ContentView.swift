@@ -9,12 +9,12 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = MovieSearchViewModel()
-
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                searchBar
-
+                SearchBarView(viewModel: viewModel)
+                
                 if viewModel.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -25,66 +25,10 @@ struct ContentView: View {
                         .padding()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    movieList
+                    MovieListView(movies: viewModel.movies)
                 }
             }
             .navigationTitle(CommonStrings.title)
         }
-    }
-
-    var searchBar: some View {
-        HStack {
-            TextField(CommonStrings.searchMovie, text: $viewModel.query, onCommit: {
-                viewModel.searchMovies()
-            })
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-
-            Button(action: {
-                viewModel.searchMovies()
-            }) {
-                Image(systemName: "magnifyingglass")
-                    .imageScale(.large)
-                    .padding(8)
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .shadow(radius: 1)
-    }
-
-    var movieList: some View {
-        List(viewModel.movies) { movie in
-            HStack {
-                AsyncImage(url: URL(string: movie.poster)) { phase in
-                    if let image = phase.image {
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else {
-                        ZStack {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                            Image(systemName: "film")
-                                .resizable()
-                                .scaledToFit()
-                                .foregroundColor(.gray)
-                                .padding(10)
-                        }
-                    }
-                }
-                .frame(width: 50, height: 75)
-                .cornerRadius(6)
-                .clipped()
-
-                VStack(alignment: .leading) {
-                    Text(movie.title)
-                        .font(.headline)
-                    Text(movie.year)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-        .listStyle(PlainListStyle())
     }
 }
